@@ -247,10 +247,51 @@ def monitor_and_predict(folder_path, poll_interval=5):
 
         time.sleep(poll_interval)
 
-def test():
+def generate_pcap_csv():
     while not stop_event.is_set():
-        print("Test function running...")
-        time.sleep(5)
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_pcap = os.path.join(INPUT_PATH, f"traffic_{timestamp}.pcap")
+        
+        # Start capture (now using direct blocking capture)
+        if not capture_pcap(INTERFACE, CAPTURE_DURATION, output_pcap):
+            print("[!] Exiting due to capture failure")
+            return
+        
+        # Verify pcap exists
+        if not os.path.exists(output_pcap):
+            print("[!] No pcap file created. Exiting.")
+            return
+        
+        # Enhanced processing
+        try:
+            print("[+] Preprocessing pcap file...")
+            enhanced_pcap = preprocess_pcap(output_pcap)
+            pcap_to_process = enhanced_pcap if enhanced_pcap else output_pcap
+            print(f"[+] Using pcap file: {pcap_to_process}")
+            
+            # Run CICFlowMeter
+            print(f"[+] Generating flow features from {pcap_to_process}...")
+            if not run_cfm(CFM_PATH, pcap_to_process, output_folder):
+                print("[!] CICFlowMeter processing failed")
+                return
+            
+            # Find the generated CSV (more robust handling)
+            base_name = os.path.basename(pcap_to_process).rsplit('.', 1)[0]
+            csv_files = [
+                f for f in os.listdir(output_folder)
+                if f.startswith(base_name) and f.lower().endswith(".csv")
+            ]
+            
+            if not csv_files:
+                print(f"[!] No CSV found for {base_name} in {output_folder}")
+                print(f"Available files: {os.listdir(output_folder)}")
+                return
+                
+        except Exception as e:
+            print(f"[!] Processing error: {e}")
+            import traceback
+            traceback.print_exc()
 
 # Example usage
 # monitor_and_predict(output_folder)
