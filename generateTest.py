@@ -38,6 +38,8 @@ output_folder = r'C:\Users\Teano\Documents\IDS-ML-TESTING\Signature Based Intrus
 
 # attack_type = "SSH"
 
+stop_event = threading.Event()
+
 def type_switch(attack_type):
     if attack_type in ["Bot", "SSH", "Portscan", "DoS"]:
         return os.path.join('C:\\Users\\Teano\\Documents\\DATASETS', attack_type)
@@ -188,7 +190,7 @@ def monitor_and_predict(folder_path, poll_interval=5):
     processed_files = set()
     print(f"Monitoring folder: {folder_path}\n")
 
-    while True:
+    while not stop_event.is_set():
         files = [os.path.join(folder_path, f) for f in os.listdir(folder_path)
                  if os.path.isfile(os.path.join(folder_path, f)) and f.lower().endswith('.csv')]
 
@@ -209,22 +211,28 @@ def monitor_and_predict(folder_path, poll_interval=5):
         time.sleep(poll_interval)
 
 def test():
-    while True:
+    while not stop_event.is_set():
         print("Test function running...")
         time.sleep(5)
 
 # Example usage
 # monitor_and_predict(output_folder)
 def main():
-    t1 = threading.Thread(target=monitor_and_predict, args=(output_folder,))
-    t2 = threading.Thread(target=test)
-    # monitor_and_predict(output_folder)
-    # print("Monitoring and prediction started.")
-    t1.start()
-    t2.start()
+    try:
+        t1 = threading.Thread(target=monitor_and_predict, args=(output_folder,))
+        t2 = threading.Thread(target=test)
+        t1.start()
+        t2.start()
 
-    t1.join()
-    t2.join()
+        # Keep main thread alive and responsive to Ctrl+C
+        while t1.is_alive() or t2.is_alive():
+            time.sleep(0.5)
+    except KeyboardInterrupt:
+        print("\n[!] Ctrl+C pressed. Exiting gracefully...")
+        stop_event.set()
+        t1.join()
+        t2.join()
+        print("[+] Exited cleanly.")
 
 if __name__ == "__main__":
     main()
