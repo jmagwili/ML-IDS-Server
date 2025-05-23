@@ -6,6 +6,7 @@ import xgboost as xgb
 import numpy as np
 import shutil
 import random
+import threading
 
 # Class mapping (as you have it)
 class_id_to_label = {
@@ -207,7 +208,25 @@ def monitor_and_predict(folder_path, poll_interval=5):
 
         time.sleep(poll_interval)
 
+def test():
+    while True:
+        print("Test function running...")
+        time.sleep(5)
 
 # Example usage
-monitor_and_predict(output_folder)
-generate_file = r'C:\Users\Teano\Documents\IDS-ML-TESTING\Signature Based Intrusion Detection Sysytem\ML-IDS\Network-Intrusion-Detection-System-with-ML\test\BOTNET ATTACK'
+# monitor_and_predict(output_folder)
+def main():
+    t1 = threading.Thread(target=monitor_and_predict, args=(output_folder,))
+    t2 = threading.Thread(target=test)
+    # monitor_and_predict(output_folder)
+    # print("Monitoring and prediction started.")
+    t1.start()
+    t2.start()
+
+    t1.join()
+    t2.join()
+
+if __name__ == "__main__":
+    main()
+
+# generate_file = r'C:\Users\Teano\Documents\IDS-ML-TESTING\Signature Based Intrusion Detection Sysytem\ML-IDS\Network-Intrusion-Detection-System-with-ML\test\BOTNET ATTACK'
