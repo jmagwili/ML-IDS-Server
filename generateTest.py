@@ -37,6 +37,8 @@ model_path = r"C:\Users\User\Documents\personal-projects\ML-IDS-Server\xgb_ids_m
 source_folder = r'C:\Users\User\Documents\personal-projects\ML-IDS-Server\datasets'
 destination_folder = r'C:\Users\User\Documents\personal-projects\ML-IDS-Server\output'
 output_folder = r'C:\Users\User\Documents\personal-projects\ML-IDS-Server\output'
+INPUT_PATH = r"C:\Users\User\Documents\personal-projects\ML-IDS-Server\pcap_store"
+CFM_PATH = r"C:\Users\User\Documents\personal-projects\ML-IDS-Server\CICFlowMeter-4.0\bin\cfm.bat"
 INTERFACE = "Wi-Fi"  # Change to your network interface
 TARGET_IP = " 192.168.56.1"  # Change to your target IP
 CAPTURE_DURATION = 60  # seconds
@@ -129,6 +131,36 @@ def preprocess_pcap(pcap_path):
     except Exception as e:
         print(f"[!] Preprocessing failed: {e}")
         return None
+    
+
+def run_cfm(cfm_path, input_file, output_folder):
+    """Run CICFlowMeter to generate flow features"""
+    try:
+        print(f"[+] Running CICFlowMeter on {input_file}...")
+        original_dir = os.getcwd()
+        bin_dir = os.path.dirname(cfm_path)
+        os.chdir(bin_dir)
+
+        command = f"cfm.bat {input_file} {output_folder}"
+        process = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            shell=True
+        )
+
+        stdout, stderr = process.communicate()
+        os.chdir(original_dir)
+
+        if process.returncode != 0:
+            print(f"[!] CICFlowMeter error:\n{stderr}")
+            return False
+        print("[+] CICFlowMeter completed successfully")
+        return True
+    except Exception as e:
+        print(f"[!] Error running CICFlowMeter: {e}")
+        return False
 
 
 def predict_anomalies(csv_path, model_path=model_path):
