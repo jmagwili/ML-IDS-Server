@@ -7,6 +7,8 @@ import numpy as np
 import shutil
 import random
 import threading
+import subprocess
+from scapy.all import *
 
 # Class mapping (as you have it)
 class_id_to_label = {
@@ -31,10 +33,13 @@ class_id_to_label = {
 
 
 # CONSTANTS
-model_path = r"C:\Users\Teano\Documents\IDS-ML-TESTING\Signature Based Intrusion Detection Sysytem\ML-IDS\ML-IDS-SERVER\xgb_ids_model_v2.json"
-source_folder = r'C:\Users\Teano\Documents\DATASETS\Portscan'
-destination_folder = r'C:\Users\Teano\Documents\IDS-ML-TESTING\Signature Based Intrusion Detection Sysytem\ML-IDS\ML-IDS-SERVER\output'
-output_folder = r'C:\Users\Teano\Documents\IDS-ML-TESTING\Signature Based Intrusion Detection Sysytem\ML-IDS\ML-IDS-SERVER\output'
+model_path = r"C:\Users\User\Documents\personal-projects\ML-IDS-Server\xgb_ids_model_v2.json"
+source_folder = r'C:\Users\User\Documents\personal-projects\ML-IDS-Server\datasets'
+destination_folder = r'C:\Users\User\Documents\personal-projects\ML-IDS-Server\output'
+output_folder = r'C:\Users\User\Documents\personal-projects\ML-IDS-Server\output'
+INTERFACE = "Wi-Fi"  # Change to your network interface
+TARGET_IP = " 192.168.56.1"  # Change to your target IP
+CAPTURE_DURATION = 60  # seconds
 
 # attack_type = "SSH"
 
