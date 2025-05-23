@@ -61,6 +61,68 @@ def simulate_file_generation(source_folder, output_folder):
     except Exception as e:
         print(f"[!] Error simulating file generation: {e}")
 
+def capture_pcap(interface, duration, output_file):
+    try:
+        # Correct paths to try (in order)
+        possible_paths = [
+            r"C:\Program Files\Wireshark\dumpcap.exe",
+            r"C:\Program Files (x86)\Wireshark\dumpcap.exe",
+            r"C:\Program Files\Wireshark\windump.exe"  # Legacy
+        ]
+        
+        # Find the first valid path
+        dumpcap_path = None
+        for path in possible_paths:
+            if os.path.exists(path):
+                dumpcap_path = path
+                break
+                
+        if not dumpcap_path:
+            raise FileNotFoundError("Neither dumpcap.exe nor windump.exe found")
+            
+        cmd = [
+            dumpcap_path,
+            "-i", interface,
+            "-w", output_file,
+            "-a", f"duration:{duration}",
+            "-s", "0",
+            "-q"  # Quiet mode
+        ]
+        
+        print(f"[+] Executing: {' '.join(cmd)}")
+        subprocess.run(cmd, check=True, timeout=duration+5)
+        return True
+        
+    except Exception as e:
+        print(f"[!] Capture failed: {str(e)}")
+        return False
+    
+def preprocess_pcap(pcap_path):
+    try:
+        packets = rdpcap(pcap_path)
+        new_packets = []
+        for pkt in packets:
+            new_packets.append(pkt)
+            if TCP in pkt and pkt[TCP].flags == "S":  # SYN packet
+                # Add fake SYN-ACK response
+                syn_ack = IP(dst=pkt[IP].src, src=pkt[IP].dst)/TCP(
+                    dport=pkt[TCP].sport, 
+                    sport=pkt[TCP].dport, 
+                    flags="SA", 
+                    seq=1000, 
+                    ack=pkt[TCP].seq + 1
+                )
+                new_packets.append(syn_ack)
+        
+        enhanced_path = pcap_path.replace(".pcap", "_enhanced.pcap")
+        wrpcap(enhanced_path, new_packets)
+        return enhanced_path  # Make sure to return the path
+    
+    except Exception as e:
+        print(f"[!] Preprocessing failed: {e}")
+        return None
+
+
 def predict_anomalies(csv_path, model_path=model_path):
     try:
         print(f"[+] Predicting on file: {os.path.basename(csv_path)}")
