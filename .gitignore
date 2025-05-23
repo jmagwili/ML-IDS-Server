@@ -1,0 +1,14 @@
+# Ignore files under the output directory
+/output/
+
+# Ignore files under the pcap store directory
+/pcap_store/
+
+#actual model
+random_forest_ids_model.pkl
+
+/_pycache_/
+
+/CICFlowMeter-4.0/
+
+/output/
