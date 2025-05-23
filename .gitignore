@@ -12,3 +12,5 @@ random_forest_ids_model.pkl
 /CICFlowMeter-4.0/
 
 /output/
+
+.env
