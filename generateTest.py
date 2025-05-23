@@ -298,7 +298,7 @@ def generate_pcap_csv():
 def main():
     try:
         t1 = threading.Thread(target=monitor_and_predict, args=(output_folder,))
-        t2 = threading.Thread(target=test)
+        t2 = threading.Thread(target=generate_pcap_csv)
         t1.start()
         t2.start()
 
