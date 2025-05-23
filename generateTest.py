@@ -4,6 +4,8 @@ import pandas as pd
 from cols import column_rename_map
 import xgboost as xgb
 import numpy as np
+import shutil
+import random
 
 # Class mapping (as you have it)
 class_id_to_label = {
@@ -24,14 +26,55 @@ class_id_to_label = {
     14: 'Web Attack - XSS',
 }
 
+
+
+
 # CONSTANTS
 model_path = r"C:\Users\Teano\Documents\IDS-ML-TESTING\Signature Based Intrusion Detection Sysytem\ML-IDS\ML-IDS-SERVER\xgb_ids_model_v2.json"
-folder = r'C:\Users\Teano\Documents\IDS-ML-TESTING\Signature Based Intrusion Detection Sysytem\ML-IDS\ML-IDS-SERVER\output'
+source_folder = r'C:\Users\Teano\Documents\DATASETS\Portscan'
+destination_folder = r'C:\Users\Teano\Documents\IDS-ML-TESTING\Signature Based Intrusion Detection Sysytem\ML-IDS\ML-IDS-SERVER\output'
+output_folder = r'C:\Users\Teano\Documents\IDS-ML-TESTING\Signature Based Intrusion Detection Sysytem\ML-IDS\ML-IDS-SERVER\output'
+
+attack_type = "SSH"
+
+def type_switch(attack_type):
+    if attack_type == "Bot":
+        source_folder = fr'C:\Users\Teano\Documents\DATASETS\{attack_type}'
+    elif attack_type == "SSH":
+        source_folder = fr'C:\Users\Teano\Documents\DATASETS\{attack_type}'
+    elif attack_type == "Portscan":
+        source_folder = fr'C:\Users\Teano\Documents\DATASETS\{attack_type}'
+    elif attack_type == "DoS":
+        source_folder = fr'C:\Users\Teano\Documents\DATASETS\{attack_type}'
+    else:
+        raise ValueError(f"Unsupported attack type: {attack_type}")
+    
+type_switch(attack_type)
+
+# will be use in the server soon
+def simulate_file_generation(source_folder, output_folder):
+    try:
+        files = [f for f in os.listdir(source_folder) if f.endswith('.csv')]
+        if not files:
+            print("[!] No CSV files found in source folder to generate.")
+            return
+
+        file_to_copy = random.choice(files)
+        src_path = os.path.join(source_folder, file_to_copy)
+        dest_path = os.path.join(output_folder, f"copy_{int(time.time())}_{file_to_copy}")
+        shutil.copy(src_path, dest_path)
+        print(f"[+] Simulated file generated: {dest_path}")
+    except Exception as e:
+        print(f"[!] Error simulating file generation: {e}")
 
 def predict_anomalies(csv_path, model_path=model_path):
     try:
         print(f"[+] Predicting on file: {os.path.basename(csv_path)}")
-        df = pd.read_csv(csv_path)
+        try:
+            df = pd.read_csv(csv_path, encoding='utf-8')
+        except UnicodeDecodeError:
+            print("[!] UTF-8 decode failed, trying 'latin1' encoding...")
+            df = pd.read_csv(csv_path, encoding='latin1')
 
         df = df.rename(columns=column_rename_map)
         df_original = df.copy()
@@ -104,8 +147,11 @@ def monitor_and_predict(folder_path, poll_interval=5):
         else:
             print(f"[{time.ctime()}] No new files...")
 
+        # simulate_file_generation(source_folder, output_folder) ## GENERATE FILE WHEN SERVER TRIGGERED
+
         time.sleep(poll_interval)
 
 
 # Example usage
-monitor_and_predict(folder)
+monitor_and_predict(output_folder)
+generate_file = r'C:\Users\Teano\Documents\IDS-ML-TESTING\Signature Based Intrusion Detection Sysytem\ML-IDS\Network-Intrusion-Detection-System-with-ML\test\BOTNET ATTACK'
