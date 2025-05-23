@@ -169,7 +169,7 @@ def run_cfm(cfm_path, input_file, output_folder):
 def predict_anomalies(csv_path, model_path=r"C:\Users\User\Documents\GitHub\Network-Intrusion-Detection-System-with-ML\xgb_ids_model_v2.json"):
     try:
         print(f"[+] Loading data from: {csv_path}")
-        df = pd.read_csv(csv_path)
+        df = pd.read_csv(csv_path, encoding='latin1') 
         
         # Debug: Print initial data shape and columns
         print(f"[DEBUG] Initial data shape: {df.shape}")
