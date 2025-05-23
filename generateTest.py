@@ -35,21 +35,15 @@ source_folder = r'C:\Users\Teano\Documents\DATASETS\Portscan'
 destination_folder = r'C:\Users\Teano\Documents\IDS-ML-TESTING\Signature Based Intrusion Detection Sysytem\ML-IDS\ML-IDS-SERVER\output'
 output_folder = r'C:\Users\Teano\Documents\IDS-ML-TESTING\Signature Based Intrusion Detection Sysytem\ML-IDS\ML-IDS-SERVER\output'
 
-attack_type = "SSH"
+# attack_type = "SSH"
 
 def type_switch(attack_type):
-    if attack_type == "Bot":
-        source_folder = fr'C:\Users\Teano\Documents\DATASETS\{attack_type}'
-    elif attack_type == "SSH":
-        source_folder = fr'C:\Users\Teano\Documents\DATASETS\{attack_type}'
-    elif attack_type == "Portscan":
-        source_folder = fr'C:\Users\Teano\Documents\DATASETS\{attack_type}'
-    elif attack_type == "DoS":
-        source_folder = fr'C:\Users\Teano\Documents\DATASETS\{attack_type}'
+    if attack_type in ["Bot", "SSH", "Portscan", "DoS"]:
+        return os.path.join('C:\\Users\\Teano\\Documents\\DATASETS', attack_type)
     else:
         raise ValueError(f"Unsupported attack type: {attack_type}")
     
-type_switch(attack_type)
+# type_switch(attack_type)
 
 # will be use in the server soon
 def simulate_file_generation(source_folder, output_folder):
@@ -147,7 +141,7 @@ def monitor_and_predict(folder_path, poll_interval=5):
         else:
             print(f"[{time.ctime()}] No new files...")
 
-        # simulate_file_generation(source_folder, output_folder) ## GENERATE FILE WHEN SERVER TRIGGERED
+        #simulate_file_generation(source_folder, output_folder) ## GENERATE FILE WHEN SERVER TRIGGERED
 
         time.sleep(poll_interval)
 
