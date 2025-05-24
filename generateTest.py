@@ -43,33 +43,8 @@ INTERFACE = "Wi-Fi"  # Change to your network interface
 TARGET_IP = " 192.168.56.1"  # Change to your target IP
 CAPTURE_DURATION = 60  # seconds
 
-# attack_type = "SSH"
-
 stop_event = threading.Event()
 
-def type_switch(attack_type):
-    if attack_type in ["Bot", "SSH", "Portscan", "DoS"]:
-        return os.path.join('C:\\Users\\Teano\\Documents\\DATASETS', attack_type)
-    else:
-        raise ValueError(f"Unsupported attack type: {attack_type}")
-    
-# type_switch(attack_type)
-
-# will be use in the server soon
-def simulate_file_generation(source_folder, output_folder):
-    try:
-        files = [f for f in os.listdir(source_folder) if f.endswith('.csv')]
-        if not files:
-            print("[!] No CSV files found in source folder to generate.")
-            return
-
-        file_to_copy = random.choice(files)
-        src_path = os.path.join(source_folder, file_to_copy)
-        dest_path = os.path.join(output_folder, f"copy_{int(time.time())}_{file_to_copy}")
-        shutil.copy(src_path, dest_path)
-        print(f"[+] Simulated file generated: {dest_path}")
-    except Exception as e:
-        print(f"[!] Error simulating file generation: {e}")
 
 def capture_pcap(interface, duration, output_file):
     try:
@@ -242,8 +217,6 @@ def monitor_and_predict(folder_path, poll_interval=5):
                 predict_anomalies(file_path)
         else:
             print(f"[{time.ctime()}] No new files...")
-
-        #simulate_file_generation(source_folder, output_folder) ## GENERATE FILE WHEN SERVER TRIGGERED
 
         time.sleep(poll_interval)
 
