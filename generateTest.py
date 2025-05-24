@@ -33,12 +33,12 @@ class_id_to_label = {
 
 
 # CONSTANTS
-model_path = r"C:\Users\User\Documents\personal-projects\ML-IDS-Server\xgb_ids_model_v2.json"
-source_folder = r'C:\Users\User\Documents\personal-projects\ML-IDS-Server\datasets'
-destination_folder = r'C:\Users\User\Documents\personal-projects\ML-IDS-Server\output'
-output_folder = r'C:\Users\User\Documents\personal-projects\ML-IDS-Server\output'
-INPUT_PATH = r"C:\Users\User\Documents\personal-projects\ML-IDS-Server\pcap_store"
-CFM_PATH = r"C:\Users\User\Documents\personal-projects\ML-IDS-Server\CICFlowMeter-4.0\bin\cfm.bat"
+model_path = r"C:\Users\Teano\Documents\IDS-ML-TESTING\Signature Based Intrusion Detection Sysytem\ML-IDS\ML-IDS-SERVER\xgb_ids_model_v2.json"
+source_folder = r'C:\Users\Teano\Documents\DATASETS\Portscan'
+destination_folder = r'C:\Users\Teano\Documents\IDS-ML-TESTING\Signature Based Intrusion Detection Sysytem\ML-IDS\ML-IDS-SERVER\output'
+output_folder = r'C:\Users\Teano\Documents\IDS-ML-TESTING\Signature Based Intrusion Detection Sysytem\ML-IDS\ML-IDS-SERVER\output'
+INPUT_PATH = r"C:\Users\Teano\Documents\IDS-ML-TESTING\Signature Based Intrusion Detection Sysytem\ML-IDS\ML-IDS-SERVER\pcap_store"
+CFM_PATH = r"C:\Users\Teano\Documents\IDS-ML-TESTING\Signature Based Intrusion Detection Sysytem\ML-IDS\ML-IDS-SERVER\CICFlowMeter-4.0\bin\cfm.bat"
 INTERFACE = "Wi-Fi"  # Change to your network interface
 TARGET_IP = " 192.168.56.1"  # Change to your target IP
 CAPTURE_DURATION = 60  # seconds
@@ -278,6 +278,7 @@ def main():
         # Keep main thread alive and responsive to Ctrl+C
         while t1.is_alive() or t2.is_alive():
             time.sleep(0.5)
+
     except KeyboardInterrupt:
         print("\n[!] Ctrl+C pressed. Exiting gracefully...")
         stop_event.set()
