@@ -5,6 +5,7 @@ import shutil
 import random
 import os
 import time
+from datetime import datetime
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -22,6 +23,8 @@ def type_switch(attack_type):
         raise ValueError(f"Unsupported attack type: {attack_type}")
 
 def generate_file(source_folder, output_folder, attack_type):
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
     try:
         source_folder = type_switch(attack_type)  # <-- assign the returned value
         files = [f for f in os.listdir(source_folder) if f.endswith('.csv')]
@@ -31,7 +34,7 @@ def generate_file(source_folder, output_folder, attack_type):
 
         file_to_copy = random.choice(files)
         src_path = os.path.join(source_folder, file_to_copy)
-        dest_path = os.path.join(output_folder, f"copy_{int(time.time())}_{file_to_copy}")
+        dest_path = os.path.join(output_folder, f"traffic_{timestamp}_enhanced.pcap_Flow.csv")
         shutil.copy(src_path, dest_path)
         print(f"[+] Simulated file generated: {dest_path}")
     except Exception as e:
