@@ -237,11 +237,31 @@ def monitor_and_predict(queue_path, output_path, poll_interval=5):
             is_capture_running = False
             time.sleep(10) #remaining time 
 
-            print("\n=== New Queue Files Detected ===")
+            def print_message():
+                while not is_capture_running:
+                    print(f"[{time.ctime()}] No new files...")
+                    time.sleep(5)
+
+            def process_data():
+                nonlocal is_capture_running
+                
+                time.sleep(10) #remaining time 
             
-            for i, file_path in enumerate(queue_new_files, 1):
-                print(f"\n[{i}] Processing: {os.path.basename(file_path)}")
-                predict_anomalies(file_path)
+                print("\n=== New Queue Files Detected ===")
+                
+                for i, file_path in enumerate(queue_new_files, 1):
+                    print(f"\n[{i}] Processing: {os.path.basename(file_path)}")
+                    predict_anomalies(file_path)
+                    is_capture_running = True   
+                
+            t1 = threading.Thread(target=print_message)
+            t2 = threading.Thread(target=process_data)
+
+            t1.start()
+            t2.start()
+
+            t1.join()
+            t2.join()
 
         # output folder
         output_has_new_files, output_new_files = check_new_files(output_path)
