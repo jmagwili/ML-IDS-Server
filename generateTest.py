@@ -75,7 +75,8 @@ def capture_pcap(interface, duration, output_file):
             "-w", output_file,
             "-a", f"duration:{duration}",
             "-s", "0",
-            "-q"  # Quiet mode
+            "-q",
+            "-y", "EN10MB"
         ]
         
         print(f"[+] Executing: {' '.join(cmd)}")
