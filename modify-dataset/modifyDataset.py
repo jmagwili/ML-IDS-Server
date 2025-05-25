@@ -49,11 +49,18 @@ def generate_file(source_folder, output_folder, attack_type, src_ip, dst_ip):
         actual_label = retype(attack_type)
         mask = df['Label'] == actual_label
 
-        # Modify only matching rows for IP and Flow ID
-        df.loc[mask, 'Src IP'] = src_ip
-        df.loc[mask, 'Dst IP'] = dst_ip
-        df.loc[mask, 'Flow ID'] = df.loc[mask].apply(
-            lambda row: f"{src_ip}-{dst_ip}-{row['Src Port']}-{row['Dst Port']}-{row['Protocol']}", axis=1
+        if attack_type == "Bot":
+            # Only update Timestamp and Dst IP for 'Bot' attack
+            df['Timestamp'] = current_time
+            df.loc[mask, 'Dst IP'] = dst_ip
+        else:
+            # Update Timestamp
+            df['Timestamp'] = current_time
+            # Update IPs and Flow ID for matched label rows
+            df.loc[mask, 'Src IP'] = src_ip
+            df.loc[mask, 'Dst IP'] = dst_ip
+            df.loc[mask, 'Flow ID'] = df.loc[mask].apply(
+                lambda row: f"{src_ip}-{dst_ip}-{row['Src Port']}-{row['Dst Port']}-{row['Protocol']}", axis=1
         )
 
         dest_path = os.path.join(output_folder, f"traffic_{timestamp_str}_enhanced.pcap_Flow.csv")
