@@ -3,6 +3,8 @@ import random
 import pandas as pd
 from datetime import datetime
 from dotenv import load_dotenv
+import ipaddress
+
 
 load_dotenv()
 
@@ -26,6 +28,20 @@ def retype(attack_type):
         "Portscan": "PortScan"
     }
     return mapping.get(attack_type, attack_type)
+
+def random_public_ip():
+    while True:
+        ip = ".".join(str(random.randint(1, 254)) for _ in range(4))
+        ip_obj = ipaddress.ip_address(ip)
+        if not (
+            ip_obj.is_private
+            or ip_obj.is_loopback
+            or ip_obj.is_multicast
+            or ip_obj.is_reserved
+            or ip_obj.is_link_local
+            or ip_obj.is_unspecified
+        ):
+            return ip
 
 def generate_file(source_folder, output_folder, attack_type, src_ip, dst_ip):
     timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -52,7 +68,17 @@ def generate_file(source_folder, output_folder, attack_type, src_ip, dst_ip):
         if attack_type == "Bot":
             # Only update Timestamp and Dst IP for 'Bot' attack
             df['Timestamp'] = current_time
+
+            # Generate a list of random Src IPs
+            random_src_ips = [random_public_ip() for _ in range(mask.sum())]
+
+            # Update Dst IP and assign random Src IP for each row with 'Bot' label
+            df.loc[mask, 'Src IP'] = random_src_ips
             df.loc[mask, 'Dst IP'] = dst_ip
+
+            df.loc[mask, 'Flow ID'] = df.loc[mask].apply(
+            lambda row: f"{row['Src IP']}-{dst_ip}-{row['Src Port']}-{row['Dst Port']}-{row['Protocol']}", axis=1
+        )
         else:
             # Update Timestamp
             df['Timestamp'] = current_time
