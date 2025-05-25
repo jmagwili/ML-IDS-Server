@@ -235,7 +235,6 @@ def monitor_and_predict(queue_path, output_path, poll_interval=5):
         
         if queue_has_new_files:
             is_capture_running = False
-            time.sleep(10) #remaining time 
 
             def print_message():
                 while not is_capture_running:
