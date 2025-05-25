@@ -202,25 +202,59 @@ def predict_anomalies(csv_path, model_path=model_path):
         traceback.print_exc()
         return None
 
+def check_new_files(folder_path):
+    files = [os.path.join(folder_path, f) for f in os.listdir(folder_path)
+        if os.path.isfile(os.path.join(folder_path, f)) and f.lower().endswith('.csv')]
+    
+    if folder_path is queue_folder:
+        # print(f"Monitoring folder: {folder_path}\n")
+        new_files = [f for f in files if f not in queue_processed]
+        new_files.sort(key=lambda x: os.path.getmtime(x))
 
-def monitor_and_predict(folder_path, poll_interval=5):
-    processed_files = set()
-    print(f"Monitoring folder: {folder_path}\n")
-
-    while not stop_event.is_set():
-        files = [os.path.join(folder_path, f) for f in os.listdir(folder_path)
-                 if os.path.isfile(os.path.join(folder_path, f)) and f.lower().endswith('.csv')]
-
-        new_files = [f for f in files if f not in processed_files]
+        if new_files:
+            for i, file_path in enumerate(new_files, 1):
+                queue_processed.add(file_path)
+            return True, new_files
+        else:
+            return False, None
+    else:
+        new_files = [f for f in files if f not in output_processed]
         new_files.sort(key=lambda x: os.path.getmtime(x))
 
         if new_files:
             print("\n=== New Files Detected ===")
             for i, file_path in enumerate(new_files, 1):
+                output_processed.add(file_path)
+            return True, new_files
+        else:
+            return False, None
+
+def monitor_and_predict(queue_path, output_path, poll_interval=5):  
+    while not stop_event.is_set():
+        # queue folder
+        queue_has_new_files, queue_new_files = check_new_files(queue_path)
+        
+        if queue_has_new_files:
+            is_capture_running = False
+            time.sleep(10) #remaining time 
+
+            print("\n=== New Queue Files Detected ===")
+            
+            for i, file_path in enumerate(queue_new_files, 1):
                 print(f"\n[{i}] Processing: {os.path.basename(file_path)}")
                 processed_files.add(file_path)
                 predict_anomalies(file_path)
-        else:
+
+        # output folder
+        output_has_new_files, output_new_files = check_new_files(output_path)
+
+        if output_has_new_files:
+            print("\n=== New Output Files Detected ===")
+            for i, file_path in enumerate(output_new_files, 1):
+                print(f"\n[{i}] Processing: {os.path.basename(file_path)}")
+                predict_anomalies(file_path)
+        
+        if not queue_has_new_files and not output_has_new_files:
             print(f"[{time.ctime()}] No new files...")
 
         time.sleep(poll_interval)
@@ -275,13 +309,16 @@ def generate_pcap_csv():
 # monitor_and_predict(output_folder)
 def main():
     try:
-        t1 = threading.Thread(target=monitor_and_predict, args=(output_folder,))
-        t2 = threading.Thread(target=generate_pcap_csv)
+        t1 = threading.Thread(target=monitor_and_predict, args=(queue_folder, output_folder,))
+        # t2 = threading.Thread(target=generate_pcap_csv)
         t1.start()
-        t2.start()
+        # t2.start()
 
         # Keep main thread alive and responsive to Ctrl+C
-        while t1.is_alive() or t2.is_alive():
+        # while t1.is_alive() or t2.is_alive():
+        #     time.sleep(0.5)
+
+        while t1.is_alive():
             time.sleep(0.5)
 
     except KeyboardInterrupt:
