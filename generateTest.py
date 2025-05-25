@@ -39,7 +39,13 @@ INPUT_PATH = r"C:\Users\Teano\Documents\IDS-ML-TESTING\Signature Based Intrusion
 CFM_PATH = r"C:\Users\Teano\Documents\IDS-ML-TESTING\Signature Based Intrusion Detection Sysytem\ML-IDS\ML-IDS-SERVER\CICFlowMeter-4.0\bin\cfm.bat"
 INTERFACE = "Wi-Fi"  # Change to your network interface
 TARGET_IP = " 192.168.56.1"  # Change to your target IP
-CAPTURE_DURATION = 60  # seconds
+CAPTURE_DURATION = 20  # seconds
+# capture_start_time = time.time()
+is_capture_running = True
+queue_folder = r"C:\Users\User\Documents\personal-projects\ML-IDS-Server\queue"
+queue_processed = set()  # Track processed files in queue
+output_processed = set()  # Track processed files in output
+
 
 stop_event = threading.Event()
 
