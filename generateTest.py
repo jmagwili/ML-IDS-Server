@@ -222,7 +222,6 @@ def check_new_files(folder_path):
         new_files.sort(key=lambda x: os.path.getmtime(x))
 
         if new_files:
-            print("\n=== New Files Detected ===")
             for i, file_path in enumerate(new_files, 1):
                 output_processed.add(file_path)
             return True, new_files
@@ -242,7 +241,6 @@ def monitor_and_predict(queue_path, output_path, poll_interval=5):
             
             for i, file_path in enumerate(queue_new_files, 1):
                 print(f"\n[{i}] Processing: {os.path.basename(file_path)}")
-                processed_files.add(file_path)
                 predict_anomalies(file_path)
 
         # output folder
@@ -320,6 +318,7 @@ def main():
 
         while t1.is_alive():
             time.sleep(0.5)
+
 
     except KeyboardInterrupt:
         print("\n[!] Ctrl+C pressed. Exiting gracefully...")
