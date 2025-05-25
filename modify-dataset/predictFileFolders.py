@@ -60,7 +60,7 @@ def predict_anomalies(csv_path):
         print("[+] Prediction Summary:")
         print(df_original['Prediction'].value_counts())
 
-        suspicious = df_original[df_original['Prediction'].str.contains('DoS|Bot', na=False)]
+        suspicious = df_original[df_original['Prediction'].str.contains('DoS|Bot|PortScan|SSH|FTP', na=False)]
         if not suspicious.empty:
             print("[!] Suspicious flows detected:")
             print(suspicious[['Source IP', 'Destination IP', 'Prediction', 'Confidence']].to_string())
