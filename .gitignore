@@ -13,4 +13,6 @@ random_forest_ids_model.pkl
 
 /output/
 
+/queue/
+
 .env
