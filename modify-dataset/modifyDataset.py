@@ -4,12 +4,23 @@ import pandas as pd
 from datetime import datetime
 from dotenv import load_dotenv
 import ipaddress
+import xgboost as xgb
+import numpy as np
+from cols import column_rename_map
 
 
 load_dotenv()
 
 INPUT_PATH = os.getenv('INPUT_PATH')
 OUTPUT_PATH = os.getenv('OUTPUT_PATH')
+
+model_path = r"C:\Users\Teano\Documents\IDS-ML-TESTING\Signature Based Intrusion Detection Sysytem\ML-IDS\ML-IDS-SERVER\xgb_ids_model_v2.json"
+class_id_to_label = {
+    0: "BENIGN", 1: "Bot", 2: 'DDoS', 3: 'DoS GoldenEye', 4: 'DoS Hulk',
+    5: 'DoS Slowhttptest', 6: 'DoS slowloris', 7: 'FTP-Patator', 8: 'Heartbleed',
+    9: 'Infiltration', 10: 'PortScan', 11: 'SSH-Patator',
+    12: 'Web Attack - Brute Force', 13: 'Web Attack - Sql Injection', 14: 'Web Attack - XSS',
+}
 
 if not INPUT_PATH or not OUTPUT_PATH:
     raise EnvironmentError("INPUT_PATH or OUTPUT_PATH environment variable not set.")
@@ -77,8 +88,8 @@ def generate_file(source_folder, output_folder, attack_type, src_ip, dst_ip):
             df.loc[mask, 'Dst IP'] = dst_ip
 
             df.loc[mask, 'Flow ID'] = df.loc[mask].apply(
-            lambda row: f"{row['Src IP']}-{dst_ip}-{row['Src Port']}-{row['Dst Port']}-{row['Protocol']}", axis=1
-        )
+                lambda row: f"{row['Src IP']}-{dst_ip}-{row['Src Port']}-{row['Dst Port']}-{row['Protocol']}", axis=1
+            )
         else:
             # Update Timestamp
             df['Timestamp'] = current_time
@@ -87,11 +98,85 @@ def generate_file(source_folder, output_folder, attack_type, src_ip, dst_ip):
             df.loc[mask, 'Dst IP'] = dst_ip
             df.loc[mask, 'Flow ID'] = df.loc[mask].apply(
                 lambda row: f"{src_ip}-{dst_ip}-{row['Src Port']}-{row['Dst Port']}-{row['Protocol']}", axis=1
-        )
+            )
 
-        dest_path = os.path.join(output_folder, f"traffic_{timestamp_str}_enhanced.pcap_Flow.csv")
-        df.to_csv(dest_path, index=False)
-        print(f"[+] Simulated and modified file saved: {dest_path}")
+        # --- Now predict anomalies on the generated file ---
+        print(f"[+] Running prediction on generated file...")
+        # Load model (same as your prediction function)
+        model = xgb.Booster()
+        model.load_model(model_path)
+
+        # Prepare DataFrame for prediction
+        df_pred = df.rename(columns=column_rename_map)
+        df_original = df_pred.copy()
+
+        non_feature_cols = ['Flow ID', 'Source IP', 'Destination IP', 'Timestamp', 'Label', 'Source Port', 'Destination Port']
+        df_pred = df_pred.drop(columns=[col for col in non_feature_cols if col in df_pred.columns], errors='ignore')
+
+        # Compute additional features as in your predict_anomalies
+        if 'Flow Duration' in df_pred.columns:
+            if 'Total Fwd Packets' in df_pred.columns and 'Total Backward Packets' in df_pred.columns:
+                total_packets = df_pred['Total Fwd Packets'] + df_pred['Total Backward Packets']
+                df_pred['Flow Packets/s'] = total_packets / (df_pred['Flow Duration'] / 1e6 + 1e-6)
+                df_pred['Fwd Packets/s'] = df_pred['Total Fwd Packets'] / (df_pred['Flow Duration'] / 1e6 + 1e-6)
+            if 'Fwd Packets Length Total' in df_pred.columns and 'Bwd Packets Length Total' in df_pred.columns:
+                total_bytes = df_pred['Fwd Packets Length Total'] + df_pred['Bwd Packets Length Total']
+                df_pred['Flow Bytes/s'] = total_bytes / (df_pred['Flow Duration'] / 1e6 + 1e-6)
+
+        expected_model_features = model.feature_names
+
+        for feature in set(expected_model_features) - set(df_pred.columns):
+            df_pred[feature] = 0.0
+
+        df_pred = df_pred[expected_model_features]
+        dmatrix = xgb.DMatrix(df_pred, feature_names=expected_model_features)
+        pred_probs = model.predict(dmatrix)
+
+        predicted_indices = np.argmax(pred_probs, axis=1)
+        predicted_classes = [class_id_to_label[idx] for idx in predicted_indices]
+        confidence_scores = np.max(pred_probs, axis=1)
+
+        df_original['Prediction'] = predicted_classes
+        df_original['Confidence'] = confidence_scores
+
+        # Find suspicious rows (your pattern)
+        suspicious_mask = df_original['Prediction'].str.contains('DoS|Bot|PortScan|SSH|FTP', na=False)
+        suspicious = df_original[suspicious_mask]
+
+        if not suspicious.empty:
+            print("[!] Suspicious flows detected. Modifying their Src IP and Dst IP...")
+
+            if attack_type != "Bot":
+                # For attacks other than Bot, keep the fixed src_ip and dst_ip, no randomization
+                df.loc[suspicious_mask, 'Src IP'] = src_ip
+                df.loc[suspicious_mask, 'Dst IP'] = dst_ip
+
+                df.loc[suspicious_mask, 'Flow ID'] = df.loc[suspicious_mask].apply(
+                    lambda row: f"{src_ip}-{dst_ip}-{row['Src Port']}-{row['Dst Port']}-{row['Protocol']}", axis=1
+                )
+            else:
+
+                random_src_ips = [random_public_ip() for _ in range(suspicious.shape[0])]
+                df.loc[suspicious_mask, 'Src IP'] = random_src_ips
+                df.loc[suspicious_mask, 'Dst IP'] = dst_ip
+
+                # For Bot attack type, keep the randomized Src IPs, but update Flow ID with those IPs and dst_ip
+                df.loc[suspicious_mask, 'Flow ID'] = df.loc[suspicious_mask].apply(
+                    lambda row: f"{row['Src IP']}-{dst_ip}-{row['Src Port']}-{row['Dst Port']}-{row['Protocol']}", axis=1
+                )
+
+
+            final_path = os.path.join(output_folder, f"traffic_{timestamp_str}_enhanced.csv")
+            df.to_csv(final_path, index=False)
+            print(f"[+] Suspicious rows updated and saved to: {final_path}")
+
+        else:
+            print("[+] No suspicious flows detected after prediction.")
+
+            # Save the modified file here if no suspicious flows detected
+            final_path = os.path.join(output_folder, f"traffic_{timestamp_str}_enhanced.csv")
+            df.to_csv(final_path, index=False)
+            print(f"[+] Modified file saved to: {final_path}")
 
     except Exception as e:
         print(f"[!] Error simulating file generation: {e}")
@@ -100,7 +185,7 @@ if __name__ == "__main__":
     generate_file(
         source_folder=INPUT_PATH,
         output_folder=OUTPUT_PATH,
-        attack_type="Bot",
+        attack_type="FTP",
         src_ip="192.168.254.102",
         dst_ip="192.168.56.1"
     )
