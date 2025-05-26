@@ -9,6 +9,8 @@ import random
 import threading
 import subprocess
 from scapy.all import *
+from dotenv import load_dotenv
+import os
 
 # Class mapping (as you have it)
 class_id_to_label = {
@@ -29,17 +31,18 @@ class_id_to_label = {
     14: 'Web Attack - XSS',
 }
 
+load_dotenv()
+
 # CONSTANTS
-model_path = r"C:\Users\User\Documents\personal-projects\ML-IDS-Server\xgb_ids_model_v2.json"
-output_folder = r'C:\Users\User\Documents\personal-projects\ML-IDS-Server\output'
-INPUT_PATH = r"C:\Users\User\Documents\personal-projects\ML-IDS-Server\pcap_store"
-CFM_PATH = r"C:\Users\User\Documents\personal-projects\ML-IDS-Server\CICFlowMeter-4.0\bin\cfm.bat"
+model_path = os.getenv('model_path')
+output_folder = os.getenv('OUTPUT_PATH')
+INPUT_PATH = os.getenv('INPUT_PATH')
+CFM_PATH = os.getenv('CFM_PATH')
 INTERFACE = "Wi-Fi"  # Change to your network interface
-TARGET_IP = " 192.168.56.1"  # Change to your target IP
 CAPTURE_DURATION = 20  # seconds
 capture_start_time = time.time()
 is_capture_running = True
-queue_folder = r"C:\Users\User\Documents\personal-projects\ML-IDS-Server\queue"
+QUEUE = os.getenv('QUEUE')
 queue_processed = set()  # Track processed files in queue
 output_processed = set()  # Track processed files in output
 
@@ -281,7 +284,7 @@ def check_new_files(folder_path):
     files = [os.path.join(folder_path, f) for f in os.listdir(folder_path)
         if os.path.isfile(os.path.join(folder_path, f)) and f.lower().endswith('.csv')]
     
-    if folder_path is queue_folder:
+    if folder_path is QUEUE:
         # print(f"Monitoring folder: {folder_path}\n")
         new_files = [f for f in files if f not in queue_processed]
         new_files.sort(key=lambda x: os.path.getmtime(x))
@@ -413,7 +416,7 @@ def generate_pcap_csv():
 
 def main():
     try:
-        t1 = threading.Thread(target=monitor_and_predict, args=(queue_folder, output_folder,))
+        t1 = threading.Thread(target=monitor_and_predict, args=(QUEUE, output_folder,))
         t2 = threading.Thread(target=generate_pcap_csv)
         t1.start()
         t2.start()
