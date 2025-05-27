@@ -119,7 +119,7 @@ def capture_pcap_interruptible(interface, output_file, stop_flag):
         start_time = time.time()
         while time.time() - start_time < CAPTURE_DURATION + 5:
             if stop_flag.is_set():
-                print("[!] Capture stop flag received. Terminating capture...")
+                # print("[!] Capture stop flag received. Terminating capture...")
                 process.terminate()
                 try:
                     process.wait(timeout=5)
@@ -339,7 +339,7 @@ def monitor_and_predict(queue_path, output_path, poll_interval=5):
 def generate_pcap_csv():
     while not stop_event.is_set():
         if not is_capture_running:
-            print("[~] Capture paused. Waiting...")
+            # print("[~] Capture paused. Waiting...")
             time.sleep(1)
             continue
 
@@ -347,7 +347,7 @@ def generate_pcap_csv():
         output_pcap = os.path.join(INPUT_PATH, f"traffic_{timestamp}.pcap")
 
         if not capture_pcap_interruptible(INTERFACE, output_pcap, capture_stop_flag):
-            print("[!] Capture interrupted or failed.")
+            # print("[!] Capture interrupted or failed.")
             continue
         
         if is_capture_running:
