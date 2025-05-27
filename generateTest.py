@@ -46,6 +46,11 @@ queue_folder = r"C:\Users\User\Documents\personal-projects\ML-IDS-Server\queue"
 queue_processed = set()  # Track processed files in queue
 output_processed = set()  # Track processed files in output
 
+capture_active_event = threading.Event()
+capture_active_event.set()
+
+
+capture_stop_flag = threading.Event()
 
 stop_event = threading.Event()
 
