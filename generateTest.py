@@ -112,7 +112,7 @@ def capture_pcap_interruptible(interface, output_file, stop_flag):
             "-y", "EN10MB"
         ]
 
-        print(f"[+] Starting packet capture: {' '.join(cmd)}")
+        # print(f"[+] Starting packet capture: {' '.join(cmd)}")
         process = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
         start_time = time.time()
@@ -328,11 +328,10 @@ def monitor_and_predict(queue_path, output_path, poll_interval=5):
                 remaining_time = CAPTURE_DURATION - (time.time() - capture_start_time)
                 time.sleep(remaining_time + 5) 
             
-                print("\n=== New Queue Files Detected ===")
+                # print("\n=== New Queue Files Detected ===")
                 
                 for i, file_path in enumerate(queue_new_files, 1):
-                    print(f"\n[{i}] Processing: {os.path.basename(file_path)}")
-                    predict_anomalies(file_path)
+                    shutil.move(file_path, output_path)
                 
                 is_capture_running = True  
                 capture_active_event.set() 
