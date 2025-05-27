@@ -280,20 +280,26 @@ def check_new_files(folder_path):
             return False, None
 
 def monitor_and_predict(queue_path, output_path, poll_interval=5):  
+    global is_capture_running
+
     while not stop_event.is_set():
         # queue folder
         queue_has_new_files, queue_new_files = check_new_files(queue_path)
         
-        if queue_has_new_files:
+        if queue_has_new_files and queue_new_files:
             is_capture_running = False
+            capture_active_event.clear()
+            capture_stop_flag.set()
 
             def print_message():
+                global is_capture_running
+               
                 while not is_capture_running:
-                    print(f"[{time.ctime()}] No new files...")
+                    print(f"[{time.ctime()}] No new files...123")
                     time.sleep(5)
 
             def process_data():
-                nonlocal is_capture_running
+                global is_capture_running
                 
                 time.sleep(10) #remaining time 
             
@@ -302,7 +308,10 @@ def monitor_and_predict(queue_path, output_path, poll_interval=5):
                 for i, file_path in enumerate(queue_new_files, 1):
                     print(f"\n[{i}] Processing: {os.path.basename(file_path)}")
                     predict_anomalies(file_path)
-                    is_capture_running = True   
+                
+                is_capture_running = True  
+                capture_active_event.set() 
+                capture_stop_flag.clear()
                 
             t1 = threading.Thread(target=print_message)
             t2 = threading.Thread(target=process_data)
@@ -329,65 +338,70 @@ def monitor_and_predict(queue_path, output_path, poll_interval=5):
 
 def generate_pcap_csv():
     while not stop_event.is_set():
+        if not is_capture_running:
+            print("[~] Capture paused. Waiting...")
+            time.sleep(1)
+            continue
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         output_pcap = os.path.join(INPUT_PATH, f"traffic_{timestamp}.pcap")
+
+        if not capture_pcap_interruptible(INTERFACE, output_pcap, capture_stop_flag):
+            print("[!] Capture interrupted or failed.")
+            continue
         
-        # Start capture (now using direct blocking capture)
-        if not capture_pcap(INTERFACE, CAPTURE_DURATION, output_pcap):
-            print("[!] Exiting due to capture failure")
-            return
-        
-        # Verify pcap exists
-        if not os.path.exists(output_pcap):
-            print("[!] No pcap file created. Exiting.")
-            return
-        
-        # Enhanced processing
-        try:
-            print("[+] Preprocessing pcap file...")
-            enhanced_pcap = preprocess_pcap(output_pcap)
-            pcap_to_process = enhanced_pcap if enhanced_pcap else output_pcap
-            print(f"[+] Using pcap file: {pcap_to_process}")
-            
-            # Run CICFlowMeter
-            print(f"[+] Generating flow features from {pcap_to_process}...")
-            if not run_cfm(CFM_PATH, pcap_to_process, output_folder):
-                print("[!] CICFlowMeter processing failed")
+        if is_capture_running:
+
+            # Verify pcap exists
+            if not os.path.exists(output_pcap):
+                print("[!] No pcap file created. Exiting.")
                 return
             
-            # Find the generated CSV (more robust handling)
-            base_name = os.path.basename(pcap_to_process).rsplit('.', 1)[0]
-            csv_files = [
-                f for f in os.listdir(output_folder)
-                if f.startswith(base_name) and f.lower().endswith(".csv")
-            ]
-            
-            if not csv_files:
-                print(f"[!] No CSV found for {base_name} in {output_folder}")
-                print(f"Available files: {os.listdir(output_folder)}")
-                return
+            # Enhanced processing
+            try:
+                print("[+] Preprocessing pcap file...")
+                enhanced_pcap = preprocess_pcap(output_pcap)
+                pcap_to_process = enhanced_pcap if enhanced_pcap else output_pcap
+                print(f"[+] Using pcap file: {pcap_to_process}")
                 
-        except Exception as e:
-            print(f"[!] Processing error: {e}")
-            import traceback
-            traceback.print_exc()
+                # Run CICFlowMeter
+                print(f"[+] Generating flow features from {pcap_to_process}...")
+                if not run_cfm(CFM_PATH, pcap_to_process, output_folder):
+                    print("[!] CICFlowMeter processing failed")
+                    return
+                
+                # Find the generated CSV (more robust handling)
+                base_name = os.path.basename(pcap_to_process).rsplit('.', 1)[0]
+                csv_files = [
+                    f for f in os.listdir(output_folder)
+                    if f.startswith(base_name) and f.lower().endswith(".csv")
+                ]
+                
+                if not csv_files:
+                    print(f"[!] No CSV found for {base_name} in {output_folder}")
+                    print(f"Available files: {os.listdir(output_folder)}")
+                    return
+                    
+            except Exception as e:
+                print(f"[!] Processing error: {e}")
+                import traceback
+                traceback.print_exc()
 
 # Example usage
 # monitor_and_predict(output_folder)
 def main():
     try:
         t1 = threading.Thread(target=monitor_and_predict, args=(queue_folder, output_folder,))
-        # t2 = threading.Thread(target=generate_pcap_csv)
+        t2 = threading.Thread(target=generate_pcap_csv)
         t1.start()
-        # t2.start()
+        t2.start()
 
         # Keep main thread alive and responsive to Ctrl+C
-        # while t1.is_alive() or t2.is_alive():
-        #     time.sleep(0.5)
-
-        while t1.is_alive():
+        while t1.is_alive() or t2.is_alive():
             time.sleep(0.5)
+
+        # while t1.is_alive():
+        #     time.sleep(0.5)
 
 
     except KeyboardInterrupt:
