@@ -37,7 +37,7 @@ CFM_PATH = r"C:\Users\Teano\Documents\IDS-ML-TESTING\Signature Based Intrusion D
 INTERFACE = "Wi-Fi"  # Change to your network interface
 TARGET_IP = " 192.168.56.1"  # Change to your target IP
 CAPTURE_DURATION = 20  # seconds
-# capture_start_time = time.time()
+capture_start_time = time.time()
 is_capture_running = True
 queue_folder = r"C:\Users\User\Documents\personal-projects\ML-IDS-Server\queue"
 queue_processed = set()  # Track processed files in queue
@@ -90,6 +90,8 @@ def capture_pcap(interface, duration, output_file):
         return False
 
 def capture_pcap_interruptible(interface, output_file, stop_flag):
+    global capture_start_time
+    
     try:
         possible_paths = [
             r"C:\Program Files\Wireshark\dumpcap.exe",
@@ -114,6 +116,8 @@ def capture_pcap_interruptible(interface, output_file, stop_flag):
         process = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
         start_time = time.time()
+        capture_start_time = start_time
+
         while time.time() - start_time < CAPTURE_DURATION + 5:
             if stop_flag.is_set():
                 # print("[!] Capture stop flag received. Terminating capture...")
@@ -174,7 +178,7 @@ def preprocess_pcap(pcap_path):
         
         enhanced_path = pcap_path.replace(".pcap", "_enhanced.pcap")
         wrpcap(enhanced_path, new_packets)
-        delete_all_pcap_files()
+        # delete_all_pcap_files()
 
         return enhanced_path  # Make sure to return the path
     
@@ -321,7 +325,8 @@ def monitor_and_predict(queue_path, output_path, poll_interval=5):
             def process_data():
                 global is_capture_running
                 
-                time.sleep(10) #remaining time 
+                remaining_time = CAPTURE_DURATION - (time.time() - capture_start_time)
+                time.sleep(remaining_time + 5) 
             
                 print("\n=== New Queue Files Detected ===")
                 
