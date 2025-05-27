@@ -326,7 +326,7 @@ def monitor_and_predict(queue_path, output_path, poll_interval=5):
                 global is_capture_running
                 
                 remaining_time = CAPTURE_DURATION - (time.time() - capture_start_time)
-                time.sleep(remaining_time + 5) 
+                time.sleep(remaining_time if remaining_time > 0 else 0) 
             
                 # print("\n=== New Queue Files Detected ===")
                 
