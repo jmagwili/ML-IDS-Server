@@ -30,7 +30,7 @@ def trigger_intrusion():
     timestamp = data.get('timestamp')
 
     print(f"[RECORD LOGS]: {src_ip} {dst_ip} {intrusion_type} {timestamp}")
-    generate_file(INPUT_PATH, OUTPUT_PATH, intrusion_type)
+    generate_file(INPUT_PATH, OUTPUT_PATH, intrusion_type, src_ip, dst_ip)
 
     return jsonify({
         'src_ip': src_ip,
