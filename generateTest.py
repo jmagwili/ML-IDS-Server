@@ -134,7 +134,27 @@ def capture_pcap_interruptible(interface, output_file, stop_flag):
         print(f"[!] Error during capture: {e}")
         return False
 
+def delete_all_pcap_files(folder_path=r"C:\Users\User\Documents\personal-projects\ML-IDS-Server\pcap_store"):
+    if not os.path.isdir(folder_path):
+        print(f"Error: '{folder_path}' is not a valid directory.")
+        return
+
+    deleted_files = 0
+    for filename in os.listdir(folder_path):
+        if filename.endswith(".pcap"):
+            file_path = os.path.join(folder_path, filename)
+            try:
+                os.remove(file_path)
+                print(f"Deleted: {file_path}")
+                deleted_files += 1
+            except Exception as e:
+                print(f"Failed to delete {file_path}: {e}")
     
+    if deleted_files == 0:
+        print("No .pcap files found.")
+    else:
+        print(f"Total .pcap files deleted: {deleted_files}")
+
 def preprocess_pcap(pcap_path):
     try:
         packets = rdpcap(pcap_path)
@@ -154,6 +174,8 @@ def preprocess_pcap(pcap_path):
         
         enhanced_path = pcap_path.replace(".pcap", "_enhanced.pcap")
         wrpcap(enhanced_path, new_packets)
+        delete_all_pcap_files()
+
         return enhanced_path  # Make sure to return the path
     
     except Exception as e:
@@ -185,6 +207,7 @@ def run_cfm(cfm_path, input_file, output_folder):
             print(f"[!] CICFlowMeter error:\n{stderr}")
             return False
         print("[+] CICFlowMeter completed successfully")
+        delete_all_pcap_files() 
         return True
     except Exception as e:
         print(f"[!] Error running CICFlowMeter: {e}")
