@@ -29,9 +29,6 @@ class_id_to_label = {
     14: 'Web Attack - XSS',
 }
 
-
-
-
 # CONSTANTS
 model_path = r"C:\Users\Teano\Documents\IDS-ML-TESTING\Signature Based Intrusion Detection Sysytem\ML-IDS\ML-IDS-SERVER\xgb_ids_model_v2.json"
 output_folder = r'C:\Users\Teano\Documents\IDS-ML-TESTING\Signature Based Intrusion Detection Sysytem\ML-IDS\ML-IDS-SERVER\output'
@@ -387,8 +384,6 @@ def generate_pcap_csv():
                 import traceback
                 traceback.print_exc()
 
-# Example usage
-# monitor_and_predict(output_folder)
 def main():
     try:
         t1 = threading.Thread(target=monitor_and_predict, args=(queue_folder, output_folder,))
@@ -400,10 +395,6 @@ def main():
         while t1.is_alive() or t2.is_alive():
             time.sleep(0.5)
 
-        # while t1.is_alive():
-        #     time.sleep(0.5)
-
-
     except KeyboardInterrupt:
         print("\n[!] Ctrl+C pressed. Exiting gracefully...")
         stop_event.set()
@@ -413,5 +404,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-# generate_file = r'C:\Users\Teano\Documents\IDS-ML-TESTING\Signature Based Intrusion Detection Sysytem\ML-IDS\Network-Intrusion-Detection-System-with-ML\test\BOTNET ATTACK'
