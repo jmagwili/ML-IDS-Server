@@ -91,6 +91,52 @@ def capture_pcap(interface, duration, output_file):
     except Exception as e:
         print(f"[!] Capture failed: {str(e)}")
         return False
+
+def capture_pcap_interruptible(interface, output_file, stop_flag):
+    try:
+        possible_paths = [
+            r"C:\Program Files\Wireshark\dumpcap.exe",
+            r"C:\Program Files (x86)\Wireshark\dumpcap.exe",
+            r"C:\Program Files\Wireshark\windump.exe"
+        ]
+
+        dumpcap_path = next((p for p in possible_paths if os.path.exists(p)), None)
+        if not dumpcap_path:
+            raise FileNotFoundError("dumpcap or windump not found")
+
+        cmd = [
+            dumpcap_path,
+            "-i", interface,
+            "-w", output_file,
+            "-s", "0",
+            "-q",
+            "-y", "EN10MB"
+        ]
+
+        print(f"[+] Starting packet capture: {' '.join(cmd)}")
+        process = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+        start_time = time.time()
+        while time.time() - start_time < CAPTURE_DURATION + 5:
+            if stop_flag.is_set():
+                print("[!] Capture stop flag received. Terminating capture...")
+                process.terminate()
+                try:
+                    process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                return False
+            time.sleep(0.5)  # Check every 0.5s
+
+        process.terminate()
+        process.wait()
+        print("[+] Capture completed successfully.")
+        return True
+
+    except Exception as e:
+        print(f"[!] Error during capture: {e}")
+        return False
+
     
 def preprocess_pcap(pcap_path):
     try:
