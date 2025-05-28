@@ -5,12 +5,15 @@ import requests
 from extensions import limiter, generate_file  # ⬅️ import the same limiter
 from dotenv import load_dotenv
 import os
+import requests
+
 
 load_dotenv()
 app = Flask(__name__)
 INPUT_PATH = os.getenv('INPUT_PATH')
 OUTPUT_PATH = os.getenv('OUTPUT_PATH')
 PORT = int(os.environ.get("PORT", 5001))
+NODE_SERVER_PORT = int(os.environ.get("NODE_IDS_PORT", 5114))
 limiter.init_app(app)
 
 
@@ -30,15 +33,24 @@ def trigger_intrusion():
     timestamp = data.get('timestamp')
 
     print(f"[RECORD LOGS]: {src_ip} {dst_ip} {intrusion_type} {timestamp}")
-    generate_file(INPUT_PATH, OUTPUT_PATH, intrusion_type, src_ip, dst_ip)
+    getConfidence = generate_file(INPUT_PATH, OUTPUT_PATH, intrusion_type, src_ip, dst_ip)
+    if getConfidence is not None:
+        confidence_value = f"{getConfidence * 100:.0f}"
+    else:
+        confidence_value = None
 
-    return jsonify({
-        'src_ip': src_ip,
-        'dst_ip': dst_ip,
-        'intrusion_type': intrusion_type,
-        'timestamp': timestamp
-    })
+    endpoint = f"http://localhost:{NODE_SERVER_PORT}/api/ids"
+    intrusionDetails = {
+        "origin": src_ip,
+        "destination": dst_ip,
+        "category": intrusion_type,
+        "confidence_level": confidence_value,
+    }
 
+    response = requests.post(endpoint, json=intrusionDetails)
+    return jsonify(response.json())
+
+    
 
 
 

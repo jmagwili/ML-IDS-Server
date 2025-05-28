@@ -176,6 +176,8 @@ def generate_file(source_folder, output_folder, attack_type, src_ip, dst_ip):
 
             final_path = os.path.join(output_folder, f"traffic_{timestamp_str}_enhanced.csv")
             df.to_csv(final_path, index=False)
+            average_confidence = suspicious['Confidence'].mean()
+            return average_confidence
             #print(f"[+] Suspicious rows updated and saved to: {final_path}")
 
         else:
@@ -184,6 +186,7 @@ def generate_file(source_folder, output_folder, attack_type, src_ip, dst_ip):
             # Save the modified file here if no suspicious flows detected
             final_path = os.path.join(output_folder, f"traffic_{timestamp_str}_enhanced.csv")
             df.to_csv(final_path, index=False)
+            return None
             #print(f"[+] Modified file saved to: {final_path}")
 
     except Exception as e:
